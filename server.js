@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
+const nodemailer = require('nodemailer');
 const app = express();
 const port = 3000;
 
@@ -19,6 +20,15 @@ db.serialize(() => {
     db.run("INSERT INTO bookings (start_date, end_date, name, email) VALUES ('2024-06-01', '2024-06-05', 'John Doe', 'john@example.com')");
 });
 
+// Set up Nodemailer transporter using Gmail
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'dgpetrom@gmail.com', // Your Gmail address
+        pass: 'likf vjdn qleq dxrn'           // Your Gmail app-specific password or account password
+    }
+});
+
 // API to get bookings
 app.get('/api/bookings', (req, res) => {
     db.all("SELECT * FROM bookings", (err, rows) => {
@@ -33,13 +43,51 @@ app.get('/api/bookings', (req, res) => {
 // API to create a new booking
 app.post('/api/bookings', (req, res) => {
     const { start_date, end_date, name, email } = req.body;
-    db.run("INSERT INTO bookings (start_date, end_date, name, email) VALUES (?, ?, ?, ?)", [start_date, end_date, name, email], function (err) {
-        if (err) {
-            res.status(500).send(err.message);
-        } else {
-            res.status(201).json({ id: this.lastID });
+
+    // Insert booking into the database
+    db.run("INSERT INTO bookings (start_date, end_date, name, email) VALUES (?, ?, ?, ?)",
+        [start_date, end_date, name, email],
+        function (err) {
+            if (err) {
+                res.status(500).send(err.message);
+            } else {
+                // Email to villa owner
+                const mailOptionsToOwner = {
+                    from: 'dgpetrom@gmail.com',
+                    to: 'dgpetrom@gmail.com', // Your email
+                    subject: `New Booking from ${name}`,
+                    text: `A new booking was made by ${name} from ${start_date} to ${end_date}.\nEmail: ${email}`
+                };
+
+                // Email to the person making the booking
+                const mailOptionsToUser = {
+                    from: 'dgpetrom@gmail.com',
+                    to: email, // The user's email
+                    subject: 'Booking Confirmation - Villa George',
+                    text: `Hi ${name},\n\nThank you for booking your stay at Villa George from ${start_date} to ${end_date}.\n\nWe look forward to your visit!`
+                };
+
+                // Send emails
+                transporter.sendMail(mailOptionsToOwner, (error, info) => {
+                    if (error) {
+                        console.error('Error sending email to owner:', error);
+                    } else {
+                        console.log('Email sent to owner:', info.response);
+                    }
+                });
+
+                transporter.sendMail(mailOptionsToUser, (error, info) => {
+                    if (error) {
+                        console.error('Error sending email to user:', error);
+                    } else {
+                        console.log('Email sent to user:', info.response);
+                    }
+                });
+
+                res.status(201).json({ id: this.lastID });
+            }
         }
-    });
+    );
 });
 
 app.listen(port, () => {
