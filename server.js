@@ -44,7 +44,9 @@ app.post('/api/payment', async (req, res) => {
             description: `Booking for ${first_name} ${last_name}`,
             metadata: {
                 customer_name: `${first_name} ${last_name}`
-            }
+            },
+            // Add the return_url parameter for Stripe's redirect after payment
+            return_url: 'https://dgpetrom.github.io/VillaGeorge/payment-confirmation.html',  // Replace with your actual return URL
         });
 
         res.status(200).json({ success: true, paymentIntent });
