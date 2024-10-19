@@ -37,10 +37,14 @@ app.post('/api/payment', async (req, res) => {
 
     try {
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount, // Amount in the smallest currency unit (e.g., cents)
+            amount: amount,  // Amount in smallest currency unit (e.g., cents for USD)
             currency: currency,
             payment_method: payment_method,
-            confirm: true
+            confirm: true,
+            description: `Booking for ${first_name} ${last_name}`,
+            metadata: {
+                customer_name: `${first_name} ${last_name}`
+            }
         });
 
         res.status(200).json({ success: true, paymentIntent });
