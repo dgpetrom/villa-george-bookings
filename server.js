@@ -110,6 +110,23 @@ app.post('/api/bookings', (req, res) => {
     );
 });
 
+app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+    const sig = req.headers['stripe-signature'];
+
+    try {
+        const event = stripe.webhooks.constructEvent(req.body, sig, 'your-webhook-secret');
+
+        if (event.type === 'payment_intent.succeeded') {
+            const paymentIntent = event.data.object;
+            console.log('Payment successful!', paymentIntent);
+        }
+
+        res.status(200).send('Received');
+    } catch (err) {
+        res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+});
+
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
 });
