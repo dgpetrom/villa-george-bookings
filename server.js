@@ -1,8 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const stripe = require('stripe')('sk_test_51QBgQ1B1SHqUmRkqj964EKsV2TRsneGKk4kwnXQjk6KbE3stSZHyiiRDYmmPkso9mKeuZBPbikNXbAIeqrCzw2kr00nUmTba6Y');  // Add your Stripe secret key here
 const sqlite3 = require('sqlite3').verbose();
 const nodemailer = require('nodemailer');
+
 const app = express();
 const port = 3000;
 
@@ -26,6 +28,24 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: 'dgpetrom@gmail.com', // Your Gmail address
         pass: 'ilaimddmyubvsnup'           // Your Gmail app-specific password or account password
+    }
+});
+
+// Create a payment intent when a booking is made
+app.post('/api/payment', async (req, res) => {
+    const { amount, currency, payment_method } = req.body;
+
+    try {
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount, // Amount in the smallest currency unit (e.g., cents)
+            currency: currency,
+            payment_method: payment_method,
+            confirm: true
+        });
+
+        res.status(200).json({ success: true, paymentIntent });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
