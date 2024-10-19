@@ -31,9 +31,8 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Create a payment intent when a booking is made
 app.post('/api/payment', async (req, res) => {
-    const { amount, currency, payment_method } = req.body;
+    const { amount, currency, payment_method, first_name, last_name } = req.body;
 
     try {
         const paymentIntent = await stripe.paymentIntents.create({
